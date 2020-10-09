@@ -1,4 +1,4 @@
-# sonoff-mqtt #
+# sonoff-ha #
 
 Control a Sonoff Basic switch from HomeAssistant.
 
