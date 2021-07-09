@@ -13,11 +13,11 @@ HA configuration:
 ```
 light:
   - platform: mqtt
-    name: "sonoff-XXXXXX"
+    name: "sonoff-R2-XXXXXX"
     command_topic: "sonoff/relay/set"
     state_topic: "sonoff/relay"
-    payload_on: "on"
-    payload_off: "off"
+    payload_on: "ON"
+    payload_off: "OFF"
 ```
 
 Pressing the button on the Sonoff switch for more than 5 seconds will
@@ -29,6 +29,6 @@ Don't forget to use signed OTA updates as described
 See:
  * [Arduino core for ESP8266 WiFi chip](https://github.com/esp8266/Arduino#arduino-core-for-esp8266-wifi-chip)
  * [ESP8266 Arduino Core’s documentation](https://arduino-esp8266.readthedocs.io/en/latest/index.html)
- ^ [Home Assistant](https://www.home-assistant.io/)
+ * [Home Assistant](https://www.home-assistant.io/)
  * [MQTT Light](https://www.home-assistant.io/integrations/light.mqtt/) 
  * [Using Home Assistant to Expand Your Home Automations](https://learn.sparkfun.com/tutorials/using-home-assistant-to-expand-your-home-automations/introduction)

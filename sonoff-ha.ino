@@ -9,7 +9,7 @@
 #ifdef LED_BUILTIN
 #define LED_PIN LED_BUILTIN;
 #else
-#define LED_PIN 13; // manually configure LED pin
+#define LED_PIN 13 // manually configure LED pin
 #endif
 #define LED_OFF HIGH
 #define LED_ON LOW
@@ -35,10 +35,13 @@
 #define MQTT_PORT   8883
 #define INTERVAL    2000
 // MQTT Topics
-#define MQTT_TOPIC_STATE  "sonoff/relay"
-#define MQTT_TOPIC_SET    "sonoff/relay/set"
-#define MQTT_PAYLOAD_ON   "on"
-#define MQTT_PAYLOAD_OFF  "off"
+#define MQTT_TOPIC_BASE   "home/light/"
+#define MQTT_TOPIC_CONFIG "/config"
+#define MQTT_TOPIC_STATE  "/state"
+#define MQTT_TOPIC_CMD    "/command"
+
+#define LIGHT_ON   "ON"
+#define LIGHT_OFF  "OFF"
 
 #define HARD_RESET_THRESHOLD_MS 5000
 
@@ -48,7 +51,7 @@
 // ============================ Id and host name ============================
 
 String id = String(ESP.getChipId(), HEX);
-String hostName = "sonoff-" + id;
+String hostName = "sonoff-R2-" + id;
 
 // ============================ Wifi ============================
 
@@ -69,14 +72,27 @@ const int mqtt_port = MQTT_PORT;
 const char* mqtt_user = MQTT_USER;
 const char* mqtt_password = MQTT_PASSWD;
 const char* mqtt_topic_state = MQTT_TOPIC_STATE;
-const char* mqtt_topic_set = MQTT_TOPIC_SET;
-const char* on = MQTT_PAYLOAD_ON;
-const char* off = MQTT_PAYLOAD_OFF;
+const char* mqtt_topic_cmd = MQTT_TOPIC_CMD;
+const char* on = LIGHT_ON;
+const char* off = LIGHT_OFF;
+
+// discovery topic
+
+String baseTopic = String(MQTT_TOPIC_BASE + hostName);
+String configPayload = String("{\"~\": \"" + baseTopic +
+                              "\", \"name\": \"" + hostName +
+                              "\", \"unique_id\": \"" + id +
+                              "\", \"cmd_t\": \"~" + MQTT_TOPIC_CMD +
+                              "\", \"stat_t\": \"~" + MQTT_TOPIC_STATE +
+                              "\"");
+String configTopic = baseTopic + "/config";
+String stateTopic = baseTopic + "/state";
+String cmdTopic = baseTopic + "/command";
 
 // Initialise the MQTT Client object
 PubSubClient pubsubClient(wifiClient); 
 
-// For (re)connecting, a non-blocking wait is used.
+// For (re)connecting the MQTT client, a non-blocking wait is used.
 unsigned long previousMillis = 0;
 unsigned long interval = INTERVAL;
 
@@ -89,6 +105,7 @@ const int led_pin = LED_PIN;
 
 bool onOff = false;
 DebounceEvent *button;
+
 
 void setup() {
   // inputs
@@ -108,21 +125,24 @@ void setup() {
   WiFi.hostname(hostName);
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    Serial.println("Connection Failed! Rebooting...");
+    Serial.println("Wifi Connection Failed! Rebooting...");
     digitalWrite(led_pin, LED_OFF);
     delay(5000);
     ESP.restart();
   }
 
+  Serial.println("Setup TLS");
   // Setup TLS fingerprint
   wifiClient.setFingerprint(fingerprint);
-  // wifiClient.setInsecure();
+  //wifiClient.setInsecure();
 
   // Set MQTT broker, port to use and the internal send/receive buffer size
+  Serial.println("Setup MQTT broker");
   pubsubClient.setServer(mqtt_server, mqtt_port);
   pubsubClient.setCallback(callback);
   
   // Set-up OTA
+  Serial.println("Setup OTA");
   ArduinoOTA.onStart([]() {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
@@ -164,6 +184,8 @@ void setup() {
   digitalWrite(led_pin, LED_OFF);    
 }
 
+
+
 void loop() {
   unsigned long currentMillis;
 
@@ -187,7 +209,7 @@ void toggleRelay() {
 }
 
 void publishState() {
-  pubsubClient.publish(mqtt_topic_state, onOff ? on : off, true);
+  pubsubClient.publish(stateTopic.c_str(), onOff ? LIGHT_ON : LIGHT_OFF, true);
 }
 
 void handleButton() {
@@ -201,6 +223,8 @@ void handleButton() {
             ESP.reset();
           } else {
             onOff = !onOff;
+            Serial.print("Button pressed");
+            Serial.println(onOff);
             toggleRelay();
           }
           break;
@@ -213,13 +237,14 @@ void handleButton() {
 
 void reconnect() {
   // Attempt to connect to the mqtt broker
-  Serial.print("Reconnect client ");
+  Serial.print("(Re)connect MQTT client ");
   Serial.print(hostName);
   if (pubsubClient.connect(hostName.c_str(), mqtt_user, mqtt_password)) {
     // Once connected, publish an announcement...
+    pubsubClient.publish(configTopic.c_str(), configPayload.c_str(), true);
     publishState();
     // ... and resubscribe
-    pubsubClient.subscribe(mqtt_topic_set);
+    pubsubClient.subscribe(cmdTopic.c_str());
     Serial.println(" Ok");
   } else {
     Serial.println(" failed");
@@ -236,9 +261,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print(topic);
   Serial.print("] ");
   Serial.println(response);
-  if(response == "on") {
+  if(response == LIGHT_ON) {
     onOff = true;
-  } else if(response == "off") {
+  } else if(response == LIGHT_OFF) {
     onOff = false;
   }
   toggleRelay();
