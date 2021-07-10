@@ -27,6 +27,7 @@ Don't forget to use signed OTA updates as described
 [here](https://arduino-esp8266.readthedocs.io/en/latest/ota_updates/readme.html#advanced-security-signed-updates).
 
 See:
+ * [ha_mqtt_light.ino](https://github.com/smrtnt/Open-Home-Automation) nearly perfect sketch.
  * [Arduino core for ESP8266 WiFi chip](https://github.com/esp8266/Arduino#arduino-core-for-esp8266-wifi-chip)
  * [ESP8266 Arduino Core’s documentation](https://arduino-esp8266.readthedocs.io/en/latest/index.html)
  * [Home Assistant](https://www.home-assistant.io/)

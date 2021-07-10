@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+//#include <WiFiClientSecure.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoOTA.h>
 #include <PubSubClient.h>
@@ -32,14 +33,16 @@
 #define MQTT_SERVER "FQDN or IP address"
 #define MQTT_FP     "F7 ... 31"
 #endif
-#define MQTT_PORT   8883
+//#define MQTT_PORT   8883
+#define MQTT_PORT   1883
 #define INTERVAL    2000
+
 // MQTT Topics
-#define MQTT_TOPIC_BASE   "home/light/"
+#define MQTT_TOPIC_BASE   "homeassistant/light/"
 #define MQTT_TOPIC_CONFIG "/config"
 #define MQTT_TOPIC_STATE  "/state"
 #define MQTT_TOPIC_CMD    "/command"
-
+// MQTT payload_on/off values. Use light default values.
 #define LIGHT_ON   "ON"
 #define LIGHT_OFF  "OFF"
 
@@ -59,7 +62,8 @@ const char* ssid = STASSID;
 const char* password = STAPSK;
 
 // Initialise the WiFi Client object
-WiFiClientSecure wifiClient;
+//WiFiClientSecure wifiClient;
+WiFiClient wifiClient;
 
 // ============================ TLS ============================
 
@@ -84,7 +88,7 @@ String configPayload = String("{\"~\": \"" + baseTopic +
                               "\", \"unique_id\": \"" + id +
                               "\", \"cmd_t\": \"~" + MQTT_TOPIC_CMD +
                               "\", \"stat_t\": \"~" + MQTT_TOPIC_STATE +
-                              "\"");
+                              "\"}");
 String configTopic = baseTopic + "/config";
 String stateTopic = baseTopic + "/state";
 String cmdTopic = baseTopic + "/command";
@@ -133,7 +137,7 @@ void setup() {
 
   Serial.println("Setup TLS");
   // Setup TLS fingerprint
-  wifiClient.setFingerprint(fingerprint);
+  //wifiClient.setFingerprint(fingerprint);
   //wifiClient.setInsecure();
 
   // Set MQTT broker, port to use and the internal send/receive buffer size
