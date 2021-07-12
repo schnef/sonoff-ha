@@ -227,7 +227,7 @@ void handleButton() {
             ESP.reset();
           } else {
             onOff = !onOff;
-            Serial.print("Button pressed");
+            Serial.print("Button pressed ");
             Serial.println(onOff);
             toggleRelay();
           }
